@@ -2,7 +2,7 @@
 'use strict';
 var stage=document.getElementById('stage');
 var H=40;               // world height of ratio = 1
-var cur={fire:'dixie',pal:'green', enc:'alpha', w:.8,year:2022,sev:{1:true,2:true,3:true},nf:true,r1:true};
+var cur={fire:'dixie',pal:'heat', enc:'alpha', w:.8,year:2022,sev:{1:true,2:true,3:true},nf:true,r1:true};
 
 //choose fire
 var FIRES={
