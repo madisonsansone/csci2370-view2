@@ -155,7 +155,7 @@ function buildPanel(){
     $('pal-'+k).addEventListener('change',function(e){
       if(!e.target.checked)return;
       cur.pal=k;
-      $('ramp').style.background='linear-gradient(90deg,'+STOPS_CSS[k]+')';
+      $('ramp').style.background='linear-gradient(90deg,'+STOPS_CSS[cur.pal]+')';
       rebuild();
     });
   });
