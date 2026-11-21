@@ -6,8 +6,8 @@ var cur={fire:'dixie',pal:'green', enc:'alpha', w:.8,year:2022,sev:{1:true,2:tru
 
 //choose fire
 var FIRES={
-  dixie:{name:'Dixie Fire',         file:'/cells_dixie.json', ignition:'July 14, 2021'},
-  north:{name:'North Complex Fire', file:'/cells_north.json', ignition:'August 17, 2020'}
+  dixie:{name:'Dixie Fire',         file:'data/cells_dixie.json', ignition:'July 14, 2021'},
+  north:{name:'North Complex Fire', file:'data/cells_north.json', ignition:'August 17, 2020'}
 };
 var cache={};
 
