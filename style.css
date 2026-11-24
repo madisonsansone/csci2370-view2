@@ -24,7 +24,7 @@ aside{background:var(--panel);border:1px solid var(--line);border-radius:6px;pad
 .row{display:flex;align-items:center;gap:10px;justify-content:space-between}
 input[type=range]{width:100%;accent-color:var(--ink)}
 .ticks{display:flex;justify-content:space-between;color:var(--mut);font-size:13px}
-.ramp{height:16px;border:1px solid var(--line);background:linear-gradient(90deg,#DBE9B4,#8FC16A 35%,#3F9A45 65%,#0B5A32)}
+.ramp{height:16px;border:1px solid var(--line);background:linear-gradient(90deg,#D9480F,#F5D431 33%,#8FD16A 66%,#0B5A32)}
 .sw{display:inline-block;width:14px;height:14px;border-radius:2px;background:#3F9A45;vertical-align:-2px;margin-right:8px;border:1px solid var(--line)}
 .tg{display:flex;align-items:center;gap:8px;cursor:pointer}
 .tg input{width:18px;height:18px;accent-color:var(--ink)}
