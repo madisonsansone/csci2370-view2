@@ -144,6 +144,7 @@ function buildSlider(){
 
 function buildPanel(){
   // column width slider
+  $('ramp').style.background='linear-gradient(90deg,'+STOPS_CSS[cur.pal]+')'
   var wi=$('cw');wi.value=cur.w;$('cwv').textContent=cur.w.toFixed(2)+'×';
   wi.addEventListener('input',function(){cur.w=+wi.value;$('cwv').textContent=cur.w.toFixed(2)+'×';rebuild()});
 
