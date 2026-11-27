@@ -1,41 +1,52 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Wildfire Recovery in California: Structure vs Greenness (View 2)</title><link rel="stylesheet" href="style.css"></head><body>
-<!--BODY-->
-<div class="v2">
-<main>
-<h1><select id="fire" aria-label="Choose fire"><option value="dixie">Dixie Fire</option><option value="north">North Complex Fire</option></select>: Structural vs Greenness Recovery</h1>
-<p class="sub">Each column is one 1/120° cell. Height = structural recovery (GEDI RH95 post/pre). Color = greenness recovery (NDVI post/pre). Opacity = burn severity (high, moderate, low) based off of MTBS.</p>
-<p class="sub" id="ign"></p>
-<div id="stage" role="img" aria-label="3D column chart of Dixie Fire recovery cells"></div>
-<p id="hint">Drag to rotate · right-drag or two fingers to pan · scroll or pinch to zoom · hover a column for details. <button id="reset" type="button">Reset view</button></p>
-</main>
-<aside>
-<section><h2>Years since fire</h2><input id="yr" class="rg" type="range" aria-label="Year"><div class="ticks" id="ticks"></div><div id="yrLabel" class="stat"></div></section>
-<section><h2>Column width</h2>
-    <input id="cw" type="range" min="0.4" max="1" step="0.05" aria-label="Column width">
-    <div class="ticks"><span>big gap</span><span id="cwv"></span><span>no gap</span></div></section>
-    <section><h2>Color</h2>
-        <div class="stat">Greenness recovery: NDVI, post-fire / pre-fire</div>
-        <div class="ramp" id="ramp"></div>
-        <div class="ticks"><span id="rampMin"></span><span id="rampMid"></span><span id="rampMax"></span></div>
-        <label class="tg"><input type="radio" name="pal" id="pal-green">Green</label>
-        <label class="tg"><input type="radio" name="pal" id="pal-heat" checked>Orange → yellow → green</label>
+    <!--BODY-->
+    <div class="v2">
+    <main>
+    <!-- <h1><select id="fire" aria-label="Choose fire"><option value="dixie">Dixie Fire</option><option value="north">North Complex Fire</option></select>: Structural vs Greenness Recovery</h1> -->
 
-<section><h2>Reference lines</h2>
-<label class="tg"><input type="checkbox" id="tgNf" checked><span class="dash"></span>Noise floor</label>
-<label class="tg"><input type="checkbox" id="tgR1" checked><span class="dash k"></span>R = 1 (no change)</label></section>
-<section><h2>Burn severity</h2>
-    <label class="tg"><input type="radio" name="enc" id="enc-alpha" checked>Transparency</label>
-    <label class="tg"><input type="radio" name="enc" id="enc-wire">Mesh + wireframe</label>
-    <label class="tg"><input type="radio" name="enc" id="enc-density">Wireframe density</label>
-    <hr style="border:0;border-top:1px solid var(--line);width:100%">
-    <label class="tg"><input type="checkbox" id="sev1" checked><span id="sevtxt1">High (solid)</span></label>
-    <label class="tg"><input type="checkbox" id="sev2" checked><span id="sevtxt2">Moderate (half transparent)</span></label>
-    <label class="tg"><input type="checkbox" id="sev3" checked><span id="sevtxt3">Low (mostly transparent)</span></label></section>
-<section><h2>This year</h2><div id="stats"></div></section> 
+    <h1><select id="fire" aria-label="Choose fire">
+        <option value="dixie">Dixie Fire</option>
+        <option value="north">North Complex Fire</option>
+        <option value="august">August Complex Fire</option>
+        <option value="creek">Creek Fire</option>
+        <option value="caldor">Caldor Fire</option>
+        <option value="castle">Castle Fire</option>
+      </select>: Structural vs Greenness Recovery</h1>
 
-</aside>
-</div>
-<!--/BODY-->
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="app.js"></script></body></html>
+    <p class="sub">Each column is one 1/120° cell. Height = structural recovery (GEDI RH95 post/pre). Color = greenness recovery (NDVI post/pre). Opacity = burn severity (high, moderate, low) based off of MTBS.</p>
+    <p class="sub" id="ign"></p>
+    <div id="stage" role="img" aria-label="3D column chart of Dixie Fire recovery cells"></div>
+    <p id="hint">Drag to rotate · right-drag or two fingers to pan · scroll or pinch to zoom · hover a column for details. <button id="reset" type="button">Reset view</button></p>
+    </main>
+    <aside>
+    <section><h2>Years since fire</h2><input id="yr" class="rg" type="range" aria-label="Year"><div class="ticks" id="ticks"></div><div id="yrLabel" class="stat"></div></section>
+    <section><h2>Column width</h2>
+        <input id="cw" type="range" min="0.4" max="1" step="0.05" aria-label="Column width">
+        <div class="ticks"><span>big gap</span><span id="cwv"></span><span>no gap</span></div></section>
+        <section><h2>Color</h2>
+            <div class="stat">Greenness recovery: NDVI, post-fire / pre-fire</div>
+            <div class="ramp" id="ramp"></div>
+            <div class="ticks"><span id="rampMin"></span><span id="rampMid"></span><span id="rampMax"></span></div>
+            <label class="tg"><input type="radio" name="pal" id="pal-green">Green</label>
+            <label class="tg"><input type="radio" name="pal" id="pal-heat" checked>Orange → yellow → green</label>
+    
+    <section><h2>Reference lines</h2>
+    <label class="tg"><input type="checkbox" id="tgNf" checked><span class="dash"></span>Noise floor</label>
+    <label class="tg"><input type="checkbox" id="tgR1" checked><span class="dash k"></span>R = 1 (no change)</label></section>
+    <section><h2>Burn severity</h2>
+        <label class="tg"><input type="radio" name="enc" id="enc-alpha" checked>Transparency</label>
+        <label class="tg"><input type="radio" name="enc" id="enc-wire">Mesh + wireframe</label>
+        <label class="tg"><input type="radio" name="enc" id="enc-density">Wireframe density</label>
+        <hr style="border:0;border-top:1px solid var(--line);width:100%">
+        <label class="tg"><input type="checkbox" id="sev1" checked><span id="sevtxt1">High (solid)</span></label>
+        <label class="tg"><input type="checkbox" id="sev2" checked><span id="sevtxt2">Moderate (half transparent)</span></label>
+        <label class="tg"><input type="checkbox" id="sev3" checked><span id="sevtxt3">Low (mostly transparent)</span></label></section>
+    <section><h2>This year</h2><div id="stats"></div></section> 
+    <div id="yrNote" class="stat" style="color:#D9480F"></div>
+    
+    </aside>
+    </div>
+    <!--/BODY-->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="app.js"></script></body></html>
