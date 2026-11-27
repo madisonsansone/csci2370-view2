@@ -6,12 +6,12 @@
   
   //choose fire
   var FIRES={
-    dixie: {name:'Dixie Fire',          file:'/cells_dixie.json',  ignition:'July 14, 2021'},
-    north: {name:'North Complex Fire',  file:'/cells_north.json',  ignition:'August 17, 2020'},
-    august:{name:'August Complex Fire', file:'/cells_august.json', ignition:'August 17, 2020'},
-    creek: {name:'Creek Fire',          file:'/cells_creek.json',  ignition:'September 5, 2020'},
-    caldor:{name:'Caldor Fire',         file:'/cells_caldor.json', ignition:'August 15, 2021'},
-    castle:{name:'Castle Fire',         file:'/cells_castle.json', ignition:'August 19, 2020'}
+    dixie: {name:'Dixie Fire',          file:'data/cells_dixie.json',  ignition:'July 14, 2021'},
+    north: {name:'North Complex Fire',  file:'data/cells_north.json',  ignition:'August 17, 2020'},
+    august:{name:'August Complex Fire', file:'data/cells_august.json', ignition:'August 17, 2020'},
+    creek: {name:'Creek Fire',          file:'data/cells_creek.json',  ignition:'September 5, 2020'},
+    caldor:{name:'Caldor Fire',         file:'data/cells_caldor.json', ignition:'August 15, 2021'},
+    castle:{name:'Castle Fire',         file:'data/cells_castle.json', ignition:'August 19, 2020'}
   };
   var cache={};
   
