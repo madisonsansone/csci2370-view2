@@ -189,7 +189,7 @@ function go(D){
       if(i<0){if(hover){hover=null;redrawYear(prev.year)}tip.style.display='none';return}
       if(!prev||prev.year!==p.year||prev.idx!==i){hover={year:p.year,idx:i};redrawYear(p.year)}
       var c=p.cells[i],k=111.2/120,w=k*Math.cos(c.lat*Math.PI/180);
-      tip.innerHTML='<b>'+c.sev+' severity</b> · '+p.year+'<br>Structural ratio: '+c.sr.toFixed(2)+(c.struct_beyond?' · beyond floor':' · inside floor')+'<br>NDVI ratio: '+c.nr.toFixed(2)+'<br>Cell center: '+Math.abs(c.lat).toFixed(3)+'°N, '+Math.abs(c.lon).toFixed(3)+'°W<br>Cell spans '+w.toFixed(2)+' × '+k.toFixed(2)+' km ('+(w*k).toFixed(2)+' km²)';
+      tip.innerHTML='<b>'+c.sev+' severity</b> · '+p.year+'<br>Structural ratio: '+c.sr.toFixed(2)+'<br>NDVI ratio: '+c.nr.toFixed(2)+'<br>Cell center: '+Math.abs(c.lat).toFixed(3)+'°N, '+Math.abs(c.lon).toFixed(3)+'°W<br>Cell spans '+w.toFixed(2)+' × '+k.toFixed(2)+' km ('+(w*k).toFixed(2)+' km²)';
       tip.style.display='block';tip.style.left=Math.min(e.clientX+14,window.innerWidth-260)+'px';tip.style.top=Math.max(4,e.clientY+14)+'px';
     });
     p.cv.addEventListener('pointerleave',function(){if(hover){var y=hover.year;hover=null;redrawYear(y)}tip.style.display='none'});
