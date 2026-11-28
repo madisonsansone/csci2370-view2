@@ -297,7 +297,7 @@
     
     //for the lat/long labels
     var c=cellsByMesh[meshes.indexOf(hit.object)][hit.instanceId],k=cellKm(c.lat);
-    tip.innerHTML='<b>'+c.sev+' severity</b><br>Structural ratio: '+c.sr.toFixed(2)+(c.clipped?' (clipped in plot)':'')+(c.struct_beyond?' · beyond floor':' · inside floor')+'<br>NDVI ratio: '+c.nr.toFixed(2)
+    tip.innerHTML='<b>'+c.sev+' severity</b><br>Structural ratio: '+c.sr.toFixed(2)+(c.clipped?' (clipped in plot)':'')+'<br>NDVI ratio: '+c.nr.toFixed(2)
       +'<br> Cell Center: '+Math.abs(c.lat).toFixed(3)+'°N, '+Math.abs(c.lon).toFixed(3)+'°W'
       +'<br>Cell spans '+k[0].toFixed(2)+' × '+k[1].toFixed(2)+' km ('+k[2].toFixed(2)+' km²)';
   }
