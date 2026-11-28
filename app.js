@@ -291,7 +291,7 @@
     var hit=raycaster.intersectObjects(meshes,false)[0],tip=$('tip');
     if(!hit||hit.instanceId==null){tip.style.display='none';return}
     var c=cellsByMesh[meshes.indexOf(hit.object)][hit.instanceId];
-    tip.innerHTML='<b>'+c.sev+' severity</b><br>Structural ratio: '+c.sr.toFixed(2)+(c.clipped?' (clipped in plot)':'')+(c.struct_beyond?' · beyond floor':' · inside floor')+'<br>NDVI ratio: '+c.nr.toFixed(2);
+    tip.innerHTML='<b>'+c.sev+' severity</b><br>Structural ratio: '+c.sr.toFixed(2)+(c.clipped?' (clipped in plot)':'')+'<br>NDVI ratio: '+c.nr.toFixed(2);
     tip.style.display='block';var sr=stage.getBoundingClientRect();
     tip.style.left=Math.min(e.clientX-sr.left+14,sr.width-240)+'px';tip.style.top=Math.max(4,e.clientY-sr.top+14)+'px';
     
