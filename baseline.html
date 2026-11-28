@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>2D: Dixie Fire post-fire recovery</title>
+<style>
+:root{--bg:#fff;--panel:#F6F7F9;--ink:#1F2A37;--mut:#6B7685;--line:#C9CED6;--stage:#ECEFF2;--orange:#D9480F}
+@media (prefers-color-scheme:dark){:root{--bg:#14181D;--panel:#1B2128;--ink:#E6EAF0;--mut:#9AA6B4;--line:#323B46;--stage:#1F252C}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 14px/1.4 Inter,system-ui,sans-serif}
+.wrap{max-width:1280px;margin:0 auto;padding:16px}
+h1{margin:0 0 4px;font:700 20px/1.2 Inter,system-ui,sans-serif}
+.sub{margin:0 0 12px;color:var(--mut)}
+.ign{margin:0 0 12px;color:var(--mut)}
+.grid{display:grid;gap:10px 14px;align-items:start}
+.colhead{font:700 15px/1.2 Inter,system-ui,sans-serif}
+.colhead small{display:block;font-weight:400;color:var(--mut);margin-top:2px}
+.rowtitle{font:700 13px/1.2 Inter,system-ui,sans-serif;color:var(--mut);margin:6px 0 -4px}
+.cell{position:relative}
+canvas{display:block;width:100%;background:var(--stage);border:1px solid var(--line);border-radius:4px}
+.bar{height:10px;border-radius:2px;margin:6px 0 2px;border:1px solid var(--line)}
+.barlab{display:flex;justify-content:space-between;color:var(--mut);font-size:12px}
+.keys{display:flex;flex-wrap:wrap;gap:4px 14px;margin:6px 0 0;font-size:12px;color:var(--mut)}
+.keys i{display:inline-block;width:11px;height:11px;margin-right:5px;vertical-align:-1px;border:1px solid var(--line)}
+.stat{margin-top:4px;font-size:12px;color:var(--mut)}
+.stat b{color:var(--ink)}
+#tip{position:fixed;display:none;pointer-events:none;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:6px 8px;font-size:13px;line-height:1.35;max-width:250px;z-index:5;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.err{padding:20px;color:#b00020}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Dixie Fire: 2D map baseline</h1>
+  <p class="sub">Each year is a column. Every panel shows the same 1/120° cells. Structure, greenness (NDVI), severity and noise floor are shown in separate panels.</p>
+  <p class="ign"><b>Ignition:</b> July 14, 2021 &nbsp;·&nbsp; Hover any cell to highlight it in every panel.</p>
+  <div id="root" class="grid"></div>
+</div>
+<div id="tip"></div>
+<script>
+(function(){
+'use strict';
+var FILE='data/cells_dixie.json';
+var H3=[[0,'#D9480F'],[.33,'#F5D431'],[.66,'#8FD16A'],[1,'#0B5A32']];           // same ramp as the 3D view
+var STRUCT=[[0,'#CDBFE6'],[.667,'#5E86C7'],[1,'#10254D']];                          // one-hue blue for structure
+var SEVC={high:'#4a1d0a','moderate':'#b3541e','low':'#e9b27c','very low':'#f6e3cf'};
+var SEVN=['high','moderate','low','very low'];
+function hex(h){return [parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)]}
+function ramp(stops,t){t=Math.max(0,Math.min(1,t));
+  for(var i=1;i<stops.length;i++){if(t<=stops[i][0]){var a=stops[i-1],b=stops[i],u=(t-a[0])/(b[0]-a[0]),A=hex(a[1]),B=hex(b[1]);
+    return 'rgb('+Math.round(A[0]+(B[0]-A[0])*u)+','+Math.round(A[1]+(B[1]-A[1])*u)+','+Math.round(A[2]+(B[2]-A[2])*u)+')'}}
+  return stops[stops.length-1][1]}
+function css(stops){return 'linear-gradient(90deg,'+stops.map(function(s){return s[1]+' '+Math.round(s[0]*100)+'%'}).join(',')+')'}
+function v(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()}
+
+fetch(FILE).then(function(r){if(!r.ok)throw new Error(r.status+' for '+FILE);return r.json()}).then(go)
+ .catch(function(e){document.getElementById('root').innerHTML='<div class="err">Could not load data ('+e.message+').</div>'});
+
+function go(D){
+  var m=D.meta,g=m.grid,asp=m.cell_aspect_x_over_y,floor=1-m.rh95_floor,rp=m.ndvi_ramp,CLIP=1.5;
+  var years=m.slider.filter(function(s){return s.has_data}).map(function(s){return s.year});
+  var byYear={};years.forEach(function(y){byYear[y]=D.cells.filter(function(c){return c.year===y})});
+  var root=document.getElementById('root');
+  root.style.gridTemplateColumns='repeat('+years.length+',minmax(0,1fr))';
+  var panels=[];                       // {kind,year,cv,ctx,geom}
+  var hover=null;                      // {year,idx}
+
+  function cell(html){var d=document.createElement('div');d.className='cell';d.innerHTML=html||'';return d}
+
+  // ---- column headers
+  years.forEach(function(y){
+    var s=m.slider.filter(function(x){return x.year===y})[0],sm=m.summary[y];
+    root.appendChild(cell('<div class="colhead">'+y+'<small>'+s.years_since_fire+' yr after fire · '+sm.burned_cells+' burned cells · '+sm.reference_cells+' reference cells</small></div>'));
+  });
+
+  function rowTitle(t){years.forEach(function(y,i){root.appendChild(cell(i===0?'<div class="rowtitle">'+t+'</div>':''))})}
+
+  function mapPanel(kind,y){
+    var d=cell(),cv=document.createElement('canvas');d.appendChild(cv);root.appendChild(d);
+    var p={kind:kind,year:y,cv:cv,ctx:cv.getContext('2d'),cells:byYear[y]};panels.push(p);return d;
+  }
+
+  // ---- row 1: structure
+  rowTitle('1 · Canopy structure: GEDI RH95 ratio (post ÷ pre). Orange dot = beyond the noise floor');
+  years.forEach(function(y){var d=mapPanel('struct',y);
+    d.insertAdjacentHTML('beforeend','<div class="bar" style="background:'+css(STRUCT)+'"></div><div class="barlab" style="position:relative;height:14px"><span style="position:absolute;left:0">0 (lost)</span><span style="position:absolute;left:66.7%;transform:translateX(-50%)">R = 1 (no change)</span><span style="position:absolute;right:0">≥1.5</span></div>')});
+  // ---- row 2: NDVI
+  rowTitle('2 · Greenness: NDVI ratio (post ÷ pre)');
+  years.forEach(function(y){var d=mapPanel('ndvi',y);
+    d.insertAdjacentHTML('beforeend','<div class="bar" style="background:'+css(H3)+'"></div><div class="barlab"><span>'+rp[0].toFixed(1)+'</span><span>'+((rp[0]+rp[1])/2).toFixed(1)+'</span><span>'+rp[1].toFixed(1)+'</span></div>')});
+  // ---- row 3: severity
+  rowTitle('3 · Burn severity (dNBR class)');
+  years.forEach(function(y,i){var d=mapPanel('sev',y);
+    d.insertAdjacentHTML('beforeend','<div class="keys">'+SEVN.map(function(k){return '<span><i style="background:'+SEVC[k]+'"></i>'+k+'</span>'}).join('')+'</div>');
+    var sm=m.summary[y].share_struct_beyond_by_severity,cs=byYear[y],nb=cs.filter(function(c){return c.struct_beyond}).length;
+    d.insertAdjacentHTML('beforeend','<div class="stat"><b>'+Math.round(100*nb/cs.length)+'%</b> of burned cells beyond the structural noise floor · high <b>'+Math.round(100*sm.high)+'%</b> · moderate <b>'+Math.round(100*sm.moderate)+'%</b> · low <b>'+Math.round(100*sm.low)+'%</b></div>')});
+  // ---- row 4: scatter
+  rowTitle('4 · Greenness vs. structure, one point per cell');
+  years.forEach(function(y){var d=cell(),cv=document.createElement('canvas');d.appendChild(cv);root.appendChild(d);
+    panels.push({kind:'scatter',year:y,cv:cv,ctx:cv.getContext('2d'),cells:byYear[y]});
+    d.insertAdjacentHTML('beforeend','<div class="stat">Dashed orange = structural noise floor (R = '+floor.toFixed(2)+'). Dotted = R = 1. Grey diagonal = equal change in both. Color = severity.</div>')});
+
+  // ---- geometry
+  function layoutMap(p){
+    var W=p.cv.clientWidth,pad={l:56,r:8,t:8,b:30},iw=W-pad.l-pad.r;
+    var ch=iw/(g.nx*asp),cw=ch*asp,ih=ch*g.ny;
+    p.geom={W:W,Hh:ih+pad.t+pad.b,pad:pad,cw:cw,ch:ch};
+  }
+  function layoutScatter(p){
+    var W=p.cv.clientWidth,pad={l:50,r:10,t:8,b:34},iw=W-pad.l-pad.r,ih=Math.min(iw,320);
+    p.geom={W:W,Hh:ih+pad.t+pad.b,pad:pad,iw:iw,ih:ih};
+  }
+  function setSize(p){var dpr=Math.min(window.devicePixelRatio||1,2);p.cv.width=Math.round(p.geom.W*dpr);p.cv.height=Math.round(p.geom.Hh*dpr);p.cv.style.height=p.geom.Hh+'px';p.ctx.setTransform(dpr,0,0,dpr,0,0)}
+
+  function px(p,c){var G=p.geom;return [G.pad.l+c.ix*G.cw,G.pad.t+(g.ny-1-c.iy)*G.ch]}
+  function sx(p,x){return p.geom.pad.l+Math.max(0,Math.min(CLIP,x))/CLIP*p.geom.iw}
+  function sy(p,y){return p.geom.pad.t+p.geom.ih-(Math.max(0,Math.min(CLIP,y))/CLIP)*p.geom.ih}
+
+  function colorFor(kind,c){
+    if(kind==='struct')return ramp(STRUCT,c.sr/CLIP*1);
+    if(kind==='ndvi')return ramp(H3,(c.nr-rp[0])/(rp[1]-rp[0]));
+    return SEVC[c.sev]||'#999';
+  }
+
+  function drawAxes(p){
+    var G=p.geom,ctx=p.ctx;ctx.fillStyle=v('--mut');ctx.font='11px Inter,system-ui,sans-serif';ctx.textAlign='center';ctx.textBaseline='top';
+    var iw=G.cw*g.nx,ih=G.ch*g.ny,i,lon,lat;
+    for(i=0;i<4;i++){var fx=(.06+.88*i/3);lon=g.lon0+fx*g.nx/120;ctx.fillText(Math.abs(lon).toFixed(2)+'°W',G.pad.l+fx*iw,G.pad.t+ih+4)}
+    ctx.textAlign='right';ctx.textBaseline='middle';
+    for(i=0;i<4;i++){var fy=(.06+.88*i/3);lat=g.lat0+(1-fy)*g.ny/120;ctx.fillText(lat.toFixed(2)+'°N',G.pad.l-4,G.pad.t+fy*ih)}
+  }
+
+  function drawMap(p){
+    var G=p.geom,ctx=p.ctx;ctx.clearRect(0,0,G.W,G.Hh);
+    var iw=G.cw*g.nx,ih=G.ch*g.ny;
+    ctx.strokeStyle=v('--line');ctx.lineWidth=1;ctx.strokeRect(G.pad.l+.5,G.pad.t+.5,iw,ih);
+    p.cells.forEach(function(c){var q=px(p,c);ctx.fillStyle=colorFor(p.kind,c);ctx.fillRect(q[0],q[1],G.cw+.4,G.ch+.4)});
+    if(p.kind==='struct'){          // orange dot in the middle of every cell beyond the floor
+      ctx.fillStyle=v('--orange');var rr=Math.max(.7,Math.min(G.cw,G.ch)*.38);
+      p.cells.forEach(function(c){if(c.struct_beyond){var q=px(p,c);ctx.beginPath();ctx.arc(q[0]+G.cw/2,q[1]+G.ch/2,rr,0,6.283);ctx.fill()}});
+    }
+    drawAxes(p);
+    if(hover&&hover.year===p.year){var c=p.cells[hover.idx],q=px(p,c);ctx.strokeStyle=v('--ink');ctx.lineWidth=2;ctx.strokeRect(q[0]-1,q[1]-1,G.cw+2,G.ch+2)}
+  }
+
+  function drawScatter(p){
+    var G=p.geom,ctx=p.ctx;ctx.clearRect(0,0,G.W,G.Hh);
+    var l=G.pad.l,t=G.pad.t,w=G.iw,h=G.ih;
+    ctx.fillStyle=v('--stage');ctx.fillRect(l,t,w,h);ctx.strokeStyle=v('--line');ctx.lineWidth=1;ctx.strokeRect(l+.5,t+.5,w,h);
+    // 1:1 diagonal
+    ctx.strokeStyle=v('--mut');ctx.globalAlpha=.6;ctx.beginPath();ctx.moveTo(sx(p,0),sy(p,0));ctx.lineTo(sx(p,CLIP),sy(p,CLIP));ctx.stroke();ctx.globalAlpha=1;
+    // R=1 (dotted) and noise floor (dashed) on the structure axis; R=1 dotted on NDVI axis
+    ctx.lineWidth=1.2;ctx.setLineDash([2,3]);ctx.strokeStyle=v('--ink');
+    ctx.beginPath();ctx.moveTo(sx(p,1),t);ctx.lineTo(sx(p,1),t+h);ctx.moveTo(l,sy(p,1));ctx.lineTo(l+w,sy(p,1));ctx.stroke();
+    ctx.setLineDash([5,3]);ctx.strokeStyle=v('--orange');ctx.beginPath();ctx.moveTo(sx(p,floor),t);ctx.lineTo(sx(p,floor),t+h);ctx.stroke();ctx.setLineDash([]);
+    // points
+    p.cells.forEach(function(c){ctx.fillStyle=SEVC[c.sev]||'#999';ctx.globalAlpha=.75;ctx.beginPath();ctx.arc(sx(p,c.sr),sy(p,c.nr),2.6,0,6.283);ctx.fill()});
+    ctx.globalAlpha=1;
+    if(hover&&hover.year===p.year){var c=p.cells[hover.idx];ctx.strokeStyle=v('--ink');ctx.lineWidth=2;ctx.beginPath();ctx.arc(sx(p,c.sr),sy(p,c.nr),5.5,0,6.283);ctx.stroke()}
+    // axes
+    ctx.fillStyle=v('--mut');ctx.font='11px Inter,system-ui,sans-serif';ctx.textAlign='center';ctx.textBaseline='top';
+    [0,.5,1,1.5].forEach(function(x){ctx.fillText(x.toFixed(1),sx(p,x),t+h+3)});
+    ctx.fillText('Structural ratio (RH95 post ÷ pre)',l+w/2,t+h+17);
+    ctx.textAlign='right';ctx.textBaseline='middle';[0,.5,1,1.5].forEach(function(y){ctx.fillText(y.toFixed(1),l-4,sy(p,y))});
+    ctx.save();ctx.translate(11,t+h/2);ctx.rotate(-Math.PI/2);ctx.textAlign='center';ctx.textBaseline='top';ctx.fillText('NDVI ratio',0,-4);ctx.restore();
+  }
+
+  function draw(p){(p.kind==='scatter'?drawScatter:drawMap)(p)}
+  function layoutAll(){panels.forEach(function(p){(p.kind==='scatter'?layoutScatter:layoutMap)(p);setSize(p);draw(p)})}
+  layoutAll();window.addEventListener('resize',layoutAll);
+  if(window.matchMedia)window.matchMedia('(prefers-color-scheme:dark)').addEventListener&&window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change',layoutAll);
+
+  // ---- hover (same cell is outlined in all panels of that year)
+  var tip=document.getElementById('tip');
+  function hit(p,mx,my){
+    var G=p.geom,i,c,q,best=-1,bd=1e9;
+    if(p.kind==='scatter'){
+      for(i=0;i<p.cells.length;i++){c=p.cells[i];var dx=sx(p,c.sr)-mx,dy=sy(p,c.nr)-my,d=dx*dx+dy*dy;if(d<bd&&d<64){bd=d;best=i}}
+      return best;
+    }
+    var ix=Math.floor((mx-G.pad.l)/G.cw),iy=g.ny-1-Math.floor((my-G.pad.t)/G.ch);
+    for(i=0;i<p.cells.length;i++){c=p.cells[i];if(c.ix===ix&&c.iy===iy)return i}
+    return -1;
+  }
+  function redrawYear(y){panels.forEach(function(p){if(p.year===y)draw(p)})}
+  panels.forEach(function(p){
+    p.cv.addEventListener('pointermove',function(e){
+      var r=p.cv.getBoundingClientRect(),i=hit(p,e.clientX-r.left,e.clientY-r.top),prev=hover;
+      if(i<0){if(hover){hover=null;redrawYear(prev.year)}tip.style.display='none';return}
+      if(!prev||prev.year!==p.year||prev.idx!==i){hover={year:p.year,idx:i};redrawYear(p.year)}
+      var c=p.cells[i],k=111.2/120,w=k*Math.cos(c.lat*Math.PI/180);
+      tip.innerHTML='<b>'+c.sev+' severity</b> · '+p.year+'<br>Structural ratio: '+c.sr.toFixed(2)+(c.struct_beyond?' · beyond floor':' · inside floor')+'<br>NDVI ratio: '+c.nr.toFixed(2)+'<br>Cell center: '+Math.abs(c.lat).toFixed(3)+'°N, '+Math.abs(c.lon).toFixed(3)+'°W<br>Cell spans '+w.toFixed(2)+' × '+k.toFixed(2)+' km ('+(w*k).toFixed(2)+' km²)';
+      tip.style.display='block';tip.style.left=Math.min(e.clientX+14,window.innerWidth-260)+'px';tip.style.top=Math.max(4,e.clientY+14)+'px';
+    });
+    p.cv.addEventListener('pointerleave',function(){if(hover){var y=hover.year;hover=null;redrawYear(y)}tip.style.display='none'});
+  });
+}
+})();
+</script>
+</body>
+</html>
